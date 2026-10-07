@@ -2,10 +2,8 @@
 GameEngine: owns the paddle, ball, and bricks.
 
 Starter version: single brick type, no lives yet, no score/combo yet.
-Ball-brick collision also has a known bug (see game/collision.py) that
-Task 1 asks you to fix. If the ball falls below the paddle, it just
-resets to the starting position with no consequence - that's what
-Task 2 builds on.
+If the ball falls below the paddle, it just resets to the starting
+position with no consequence - that's what Task 2 builds on.
 """
 
 import pygame
@@ -64,7 +62,11 @@ class GameEngine:
 
         for brick in self.bricks:
             if handle_ball_brick_collision(self.ball, brick):
-                brick.hits_remaining -= 1   # BUG: tracked, but never actually checked to remove the brick
+                brick.hits_remaining -= 1
+                if brick.hits_remaining <= 0:
+                    # Hits used up: remove the brick from play.
+                    # Safe to mutate the list here because we break right after.
+                    self.bricks.remove(brick)
                 break
 
         if self.ball.is_below(HEIGHT):
