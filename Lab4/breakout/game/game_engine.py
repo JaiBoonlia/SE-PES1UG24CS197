@@ -5,6 +5,9 @@ Task 2: the player has 3 lives. Missing the ball costs one life and
 resets the ball; at 0 lives the game ends and R restarts it.
 Task 3: three brick types (normal / strong / unbreakable). The level is
 cleared once every breakable brick is gone.
+Task 4: score + combo multiplier. Every hit on a breakable brick scores
+POINTS_PER_HIT x multiplier and then raises the multiplier by 1 (up to
+MAX_MULTIPLIER). Missing the ball resets the multiplier to 1.
 """
 
 import pygame
@@ -30,6 +33,8 @@ BRICK_HEIGHT = 22
 BRICK_GAP = 6
 BRICK_TOP_MARGIN = 50
 STARTING_LIVES = 3
+POINTS_PER_HIT = 10
+MAX_MULTIPLIER = 10
 
 
 class GameEngine:
@@ -42,6 +47,8 @@ class GameEngine:
         self.ball = Ball(x=WIDTH / 2, y=HEIGHT - 50)
         self.bricks = self._build_bricks()
         self.lives = STARTING_LIVES
+        self.score = 0
+        self.multiplier = 1
         self.game_over = False
         self.won = False
 
@@ -86,6 +93,10 @@ class GameEngine:
 
         for brick in self.bricks:
             if handle_ball_brick_collision(self.ball, brick):
+                if brick.breakable:
+                    # Score first (at the current multiplier), then grow the combo.
+                    self.score += POINTS_PER_HIT * self.multiplier
+                    self.multiplier = min(self.multiplier + 1, MAX_MULTIPLIER)
                 if brick.hit():
                     # Hits used up: remove the brick from play.
                     # Safe to mutate the list here because we break right after.
@@ -97,6 +108,7 @@ class GameEngine:
 
         if self.ball.is_below(HEIGHT):
             self.lives -= 1
+            self.multiplier = 1   # missing the ball breaks the combo
             if self.lives <= 0:
                 self.game_over = True
             else:
@@ -106,7 +118,9 @@ class GameEngine:
         from game import renderer
         renderer.draw_scene(surface, self.paddle, self.ball, self.bricks)
         renderer.draw_text(surface, font, f"Bricks left: {sum(b.breakable for b in self.bricks)}", (10, 10))
-        renderer.draw_text(surface, font, f"Lives: {self.lives}", (520, 10))
+        renderer.draw_text(surface, font, f"Score: {self.score}", (215, 10))
+        renderer.draw_text(surface, font, f"Combo: x{self.multiplier}", (375, 10))
+        renderer.draw_text(surface, font, f"Lives: {self.lives}", (535, 10))
         if self.game_over:
             renderer.draw_banner(surface, font, "GAME OVER", dy=-14)
             renderer.draw_banner(surface, font, "Press R to restart", dy=14)
